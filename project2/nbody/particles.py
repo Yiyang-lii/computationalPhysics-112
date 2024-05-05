@@ -13,6 +13,7 @@ class Particles:
         self._velocities = np.zeros((N, 3))
         self._accelerations = np.zeros((N, 3))
         self._tags = np.linspace(1, N, N)
+        self._time = 0.0
 
     @property
     def masses(self):
@@ -57,31 +58,87 @@ class Particles:
             raise ValueError('Number of tags should be equal to number of particles')
         self._tags = tags
         return
-
-    def set_initial_conditions(self, positions, velocities):
-        self._positions = positions
-        self._velocities = velocities
-
-    def force(self, i, j, G=0.001, r_softening=0.01):
-        r = self._positions[j] - self._positions[i]
-        return G * self._masses[i] * self._masses[j] * r / (r + r_softening)**3
     
-    def cal_acceleration(self, G=0.001, r_softening=0.01):
-        for i in range(self.nparticles):
-            for j in range(self.nparticles):
-                if j > i:
-                    self._accelerations[i] += self.force(i, j, G, r_softening) / self._masses[i]
-                    self._accelerations[j] -= self.force(j, i, G, r_softening) / self._masses[j]
+    def set_particles(self, pos, vel, acc, t):
+        """
+        Set particle properties
+        """
+        self._positions = pos
+        self._velocities = vel
+        self._accelerations = acc
+        self._time = t
         return
 
-    def plot(self):
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(self._positions[:, 0], self._positions[:, 1], self._positions[:, 2])
-        plt.show()
+    def output(self, filename):
+        """
+        Output particle properties to a text file
+        """
+        header = "# time,tag,mass,x,y,z,vx,vy,vz,ax,ay,az\n"
+        header+= "# s,,kg,m,m,m,m/s,m/s,m/s,m/s^2,m/s^2,m/s^2\n"
+
+        np.savetxt(filename, 
+                   np.hstack((np.ones((self.nparticles,1)) * self._time, 
+                                       self._tags.reshape(-1,1), 
+                                       self._masses, 
+                                       self._positions, 
+                                       self._velocities, 
+                                       self._accelerations)), 
+                                       delimiter=",", header=header, comments="")
+
+        return
+    
+    def draw(self, dim=2, save=False, filename="particles.png"):
+        """
+        Draw particle positions
+        """
+        if dim == 2:
+            fig = plt.figure()
+            plt.scatter(self.positions[:,0], self.positions[:,1])
+            plt.xlabel("x")
+            plt.ylabel("y")
+            plt.title("Particle projection in x-y plane, t = " + str(np.round(self._time)), fontsize=16)
+            # set aspect ratio to be equal
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.tight_layout()
+            plt.show()
+            return
+        elif dim == 3:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            ax.scatter(self.positions[:,0], self.positions[:,1], self.positions[:,2])
+            # set aspect ratio to be equal
+            ax.set_aspect('equal')
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+            plt.tight_layout()
+            plt.show()
+            return
+        else:
+            raise ValueError("Invalid dimension")
+
 
 if __name__ == '__main__':
-    p = Particles(2)
-    p.set_masses(np.array([[1], [2]]))
-    p.set_initial_conditions(np.array([[0, 0, 0], [1, 0, 0]]), np.array([[0, 0, 0], [0, 0, 0]]))
-    p.plot()
+    
+    nparticles = 10
+    dt = 0.1
+    steps = 20
+    G = 1.0
+    rsoft = 0.01
+    
+    particles = Particles(nparticles)
+
+    total_mass = 20
+    particles.masses = np.ones((nparticles, 1))
+    particles.masses = total_mass * particles.masses / nparticles
+    
+    np.random.seed(46)
+    particles.positions = np.random.rand(nparticles, 3)
+    particles.velocities = np.zeros((nparticles, 3))
+    particles.tags = np.linspace(1, nparticles, nparticles)
+   
+    mean = np.mean(particles.positions, axis=0)
+    std = np.std(particles.positions, axis=0)
+    particles.positions = (particles.positions - mean) / std
+
+    # particles.draw(dim=3)
