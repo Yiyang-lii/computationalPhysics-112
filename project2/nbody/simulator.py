@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from .particles import Particles
+from .particles import Particles 
 from numba import jit, njit, prange, set_num_threads
 
 """
@@ -99,7 +99,7 @@ class NBodySimulator:
                 self.particles.output(fn)
 
                 if self._visualization:
-                    particles.draw(dim=2)
+                    particles.draw(dim=2, save=False)
                 
                 if self._io_screen:
                     print("Time: ", time, "; Total time: ", tmax)
@@ -235,7 +235,7 @@ def _acceleration_kernal(nparticles, mass, positions, accelerations, rsoft, G):
 
 if __name__ == "__main__":
     # test 
-    nparticles = 10
+    nparticles = 2
     dt = 0.1
     steps = 50
     tmax = 5
@@ -262,3 +262,28 @@ if __name__ == "__main__":
     simulation = NBodySimulator(particles)
     simulation.setup(G=G, rsoft=rsoft, method="RK4", io_freq=10, io_header="nbody", io_screen=True, visualization=False)
     simulation.evolve(dt=dt, tmax=tmax)
+
+    # sun and earth
+    # sun_mass = 1.989e30 # kg
+    # earth_mass = 5.972e24 # kg
+    # separation = 1.496e11 # m
+    # period = 3.154e7 # s
+    # r_sun = separation * earth_mass / (sun_mass + earth_mass)
+    # r_earth = separation * sun_mass / (sun_mass + earth_mass)
+    # vy_sun = 2 * np.pi * r_sun / period
+    # vy_earth = 2 * np.pi * r_earth / period
+
+    # pts = Particles(N=2)
+    # pts.masses = np.array([[sun_mass], [earth_mass]])
+    # pts.positions = np.array([[-r_sun, 0, 0], [r_earth, 0, 0]])
+    # pts.velocities = np.array([[0, -vy_sun, 0], [0, vy_earth, 0]])
+    # pts.accelerations = np.zeros((2, 3))
+    # pts.tags = np.array([1, 2])
+
+    # plt.figure()
+    # plt.plot(pts.positions[1, 0], pts.positions[1, 1], 'o', label='Earth')
+    # plt.plot(pts.positions[0, 0], pts.positions[0, 1], 'o', label='Sun')
+    # plt.xlabel('x')
+    # plt.ylabel('y')
+    # plt.legend()
+    # plt.show()
